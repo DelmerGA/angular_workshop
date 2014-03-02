@@ -59,7 +59,7 @@ To get angular you can do one of the following
 	
 and just `rm vendor/assets/javascripts/angular`, which might be a little over the top and UNIX-y, or you can [download it from here](http://code.angularjs.org/1.2.13/angular-1.2.13.zip), open it, and then 
 
-	mv "Users/$USER/Downloads/angular-1.2.13" vendor/assets/javascripts/
+	mv "~/Downloads/angular-1.2.13" vendor/assets/javascripts/
 	
 
 ### Including Angular
