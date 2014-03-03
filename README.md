@@ -268,5 +268,104 @@ Now all that is left is to render the view in the index.html, and we change it t
 
 ### Making Requests
 
+Let's try making a request for more samples to our server. In order to make a request we should update our `SampleController#index` to respond with an array of JSON samples.
+
+
+`samples_controller.rb`
+
+	class SamplesController < ApplicationController
+	
+		def index
+			# Add some fake samples
+			fake_samples = [{name: "blah"},{name: "pretty blah"}]
+			
+			# respond to the type of request
+			respond_to do |f|
+				f.html
+				f.json	{render :json => fake_samples}
+			end
+		end
+		...
+	end
+
+That should be pretty straight forward. Now all we have to do is modify our `SamplesCtrl` to make an http  resquest using Angular's `$http` object.
+
+
+`/assets/javascripts/samples_controller.js`
+	
+	...
+	
+	// Add the `$http` dependency to list  
+	SampleAppCtrls.controller("SamplesCtrl", ["$scope", "$http", 
+		function($scope){
+		// fake samples
+			$scope.fakeSamples = [{name: "bunny", description: "fluffy"}
+								, {name: "Green Stuff", description: "meh"}
+								, {name: "elephant", description: "big"}
+								];		
+		
+	}]);
+
+
+Now try writing a get request for more samples as follows.
+
+	SampleAppCtrls.controller("SamplesCtrl", ["$scope", "$http", 
+		function($scope){
+			// fake samples
+			$scope.fakeSamples = [{name: "bunny", description: "fluffy"}
+								, {name: "Green Stuff", description: "meh"}
+								, {name: "elephant", description: "big"}
+								];
+			// requesting more samples
+			$http.get("/samples.json").success(function(data){
+				console.log(data);
+				$scope.fakeSamples = $scope.fakeSamples.concat(data);
+			});		
+	}]);
+
+If we try to do an `$http.post` request we might get a [422](http://www.flickr.com/photos/girliemac/6514473085/in/set-72157628409467125) an unprocessible entity respone from server. This is most likely due to not including a `CSRF` token or authenticity token. Let's create a `Sample` model in our database, before we get any further with making `post` requests.
+
+
+	$ rails g model sample name description
+	...
+	$ rake db:migrate
+	
+Now setup a `create` method in our `SamplesController`
+
+`samples_controller.rb`
+
+	class SamplesController < ApplicationController
+		...
+		
+		def create
+			new_sample = params[:sample]
+			# In Rails 4
+			# 	new_sample = params.require(:sample).permit(:name, :description)
+			sample = Sample.create(new_sample)
+			
+			respond_to do |f|
+				f.html {redirect_to samples_path}
+				f.json {render json: sample }
+			end
+		end
+	end
+
+Now we can try our first attempt at making a simple `$http` post request with an included authenticity token, which we will refactor shortly.
+
+`/assets/javascripts/samples_controller.js`
+	
+	$scope.saveSample = function(){
+	 	
+	 	$http({method: "post",
+				 url: "/samples", 
+				 data: {sample:
+					 		{name: $scope.mock_sample},
+	 				 		"authenticity_token": $('meta[name=csrf-token]').attr('content')} 						 
+		}).success(function(data){
+			console.log(data); 
+		});
+	};
+ 	
+ 	
 
 	
